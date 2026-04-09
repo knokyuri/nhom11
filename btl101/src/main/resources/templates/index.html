@@ -1,0 +1,756 @@
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <meta charset="UTF-8">
+    <title>Hệ Thống Quản Trị DEVMGR PRO - Bản Cập Nhật</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root { --sidebar-w: 260px; --dark-blue: #1a252f; --accent: #3498db; --bg-body: #f4f7f9; }
+        body { background: var(--bg-body); font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; overflow-x: hidden; }
+
+        /* Sidebar */
+        .sidebar { width: var(--sidebar-w); height: 100vh; position: fixed; background: var(--dark-blue); color: white; z-index: 1000; transition: all 0.3s; }
+        .sidebar-brand { padding: 2rem 1.5rem; font-weight: 800; font-size: 1.5rem; color: var(--accent); border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .nav-link { color: #95a5a6; padding: 1.1rem 1.5rem; transition: 0.3s; border-left: 4px solid transparent; display: flex; align-items: center; cursor: pointer; background: none; border: none; width: 100%; text-align: left;}
+        .nav-link:hover, .nav-link.active { background: #2c3e50; color: white !important; border-left-color: var(--accent); }
+        .nav-link i { width: 25px; text-align: center; }
+
+        /* Main Layout */
+        .main-content { margin-left: var(--sidebar-w); padding: 2rem; min-height: 100vh; transition: all 0.3s; }
+        .card { border: none; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.05); margin-bottom: 1.5rem; }
+
+        /* Table Styling */
+        .table thead { background: #f8f9fa; }
+        .table thead th { border: none; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: #7f8c8d; padding: 15px; }
+        .table tbody td { padding: 15px; vertical-align: middle; border-bottom: 1px solid #f1f1f1; }
+
+        /* Specific Components */
+        .pb-card { transition: 0.3s; border-top: 4px solid var(--accent); }
+        .pb-card:hover { transform: translateY(-5px); }
+        .btn-action { width: 32px; height: 32px; padding: 0; display: inline-flex; align-items: center; justify-content: center; border-radius: 8px; }
+
+        /* Stats Cards */
+        .stat-card { border-left: 4px solid transparent; }
+        .stat-card.primary { border-left-color: #3498db; }
+        .stat-card.success { border-left-color: #2ecc71; }
+        .stat-card.warning { border-left-color: #f1c40f; }
+        .stat-card.danger { border-left-color: #e74c3c; }
+
+        /* Responsive */
+        @media (max-width: 992px) {
+            .sidebar { margin-left: calc(-1 * var(--sidebar-w)); }
+            .main-content { margin-left: 0; }
+            .sidebar.show { margin-left: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="sidebar shadow" id="sidebar">
+    <div class="sidebar-brand"><i class="fa fa-terminal me-2"></i>MANAGER</div>
+    <div class="nav flex-column nav-pills mt-3" id="v-pills-tab" role="tablist">
+        <button class="nav-link active" data-bs-toggle="pill" data-bs-target="#tab-home" role="tab"><i class="fa fa-home me-3"></i>Trang chủ</button>
+        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-nv" role="tab"><i class="fa fa-users me-3"></i>Nhân viên</button>
+        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-pb" role="tab"><i class="fa fa-sitemap me-3"></i>Phòng ban</button>
+        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-cc" role="tab"><i class="fa fa-calendar-check me-3"></i>Chấm công</button>
+        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-tk" role="tab">
+            <i class="fa fa-chart-line me-3"></i>Thống Kê
+        </button>
+        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-lt" role="tab">
+            <i class="fa fa-calendar-alt me-3"></i>Lịch Trình
+        </button>
+        <button class="nav-link" data-bs-toggle="pill" data-bs-target="#tab-settings" role="tab"><i class="fa fa-cog me-3"></i>Cài đặt</button>
+        <a th:href="@{/logout}" class="nav-link text-danger mt-5"><i class="fa fa-sign-out-alt me-3"></i>Đăng xuất</a>
+    </div>
+</div>
+
+<div class="main-content">
+    <div class="d-lg-none mb-3 d-flex justify-content-between align-items-center bg-white p-3 rounded shadow-sm">
+        <h5 class="fw-bold m-0 text-primary">Manager</h5>
+        <button class="btn btn-outline-primary" id="sidebarToggle"><i class="fa fa-bars"></i></button>
+    </div>
+
+    <div class="tab-content" id="v-pills-tabContent">
+
+        <div class="tab-pane fade show active" id="tab-home" role="tabpanel">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="fw-bold m-0">Tổng quan Dashboard</h2>
+                    <p class="text-muted m-0">Xin chào, <span class="fw-bold text-primary" th:text="${session.user.username}">Admin</span>! Chúc bạn ngày mới tốt lành.</p>
+                </div>
+                <div class="text-muted small bg-white px-3 py-2 rounded-pill shadow-sm">
+                    <i class="fa fa-clock me-1 text-primary"></i> Hôm nay: <span class="fw-bold" th:text="${#temporals.format(#temporals.createNow(), 'dd/MM/yyyy')}"></span>
+                </div>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-md-3">
+                    <div class="card p-3 bg-primary text-white border-0 h-100 stat-card">
+                        <div class="d-flex align-items-center">
+                            <div class="display-6 me-3 opacity-50"><i class="fa fa-user-tie"></i></div>
+                            <div><p class="mb-0 small opacity-75">Tổng Nhân sự</p><h3 class="fw-bold mb-0" th:text="${#lists.size(dsNV)}">0</h3></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="card p-3 bg-success text-white border-0 h-100 stat-card">
+                        <div class="d-flex align-items-center">
+                            <div class="display-6 me-3 opacity-50"><i class="fa fa-door-open"></i></div>
+                            <div><p class="mb-0 small opacity-75">Phòng ban</p><h3 class="fw-bold mb-0" th:text="${#lists.size(dsPB)}">0</h3></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card p-3 bg-white border-0 shadow-sm d-flex justify-content-center h-100">
+                        <div class="d-flex align-items-center px-2">
+                            <img th:src="'https://ui-avatars.com/api/?name=' + ${session.user.username} + '&background=3498db&color=fff'" class="rounded-circle me-3" width="55">
+                            <div>
+                                <h6 class="mb-0 fw-bold text-dark" th:text="${session.user.username}">Admin</h6>
+                                <p class="mb-0 small text-muted">Hệ thống hoạt động ổn định. <a href="#" class="text-decoration-none" data-bs-toggle="pill" data-bs-target="#tab-settings">Đổi mật khẩu?</a></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-3 mb-4">
+                <div class="col-6 col-md-3">
+                    <div class="card p-3 bg-white border-0 shadow-sm stat-card success">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div><p class="text-muted mb-1 small">Đi làm hôm nay</p><h4 class="fw-bold mb-0 text-success">
+                                <span id="presentCount">0</span>
+                            </h4></div>
+                            <div class="text-success bg-success-subtle p-2 rounded-circle"><i class="fa fa-check fs-5"></i></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card p-3 bg-white border-0 shadow-sm stat-card danger">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div><p class="text-muted mb-1 small">Vắng mặt (không lý do)</p><h4 class="fw-bold mb-0 text-danger">
+                                <span id="absentCount">0</span>
+                            </h4></div>
+                            <div class="text-danger bg-danger-subtle p-2 rounded-circle"><i class="fa fa-times fs-5"></i></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card p-3 bg-white border-0 shadow-sm stat-card warning">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div><p class="text-muted mb-1 small">Đi muộn / Về sớm</p><h4 class="fw-bold mb-0 text-warning">
+                                <span id="lateCount">0</span>
+                            </h4></div>
+                            <div class="text-warning bg-warning-subtle p-2 rounded-circle"><i class="fa fa-clock fs-5"></i></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-6 col-md-3">
+                    <div class="card p-3 bg-white border-0 shadow-sm stat-card primary">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div><p class="text-muted mb-1 small">Tỷ lệ chuyên cần tháng</p><h4 class="fw-bold mb-0 text-primary">94.5%</h4></div>
+                            <div class="text-primary bg-primary-subtle p-2 rounded-circle"><i class="fa fa-chart-line fs-5"></i></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4">
+                <div class="col-md-7">
+                    <div class="card p-4 border-0 shadow-sm h-100">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h5 class="fw-bold m-0">Thông số ngân sách</h5>
+                            <button class="btn btn-sm btn-outline-primary rounded-pill px-3" data-bs-toggle="pill" data-bs-target="#tab-pb">Chi tiết</button>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-borderless align-middle table-sm">
+                                <thead class="bg-light"><tr><th>Phòng ban</th><th>Nhân sự</th><th>Ngân sách hoạt động</th></tr></thead>
+                                <tbody>
+                                <tr th:each="pb : ${dsPB}">
+                                    <td class="fw-bold text-dark" th:text="${pb.tenPB}"></td>
+                                    <td th:text="${pb.dsNhanVien != null ? #lists.size(pb.dsNhanVien) : 0} + ' người'"></td>
+                                    <td class="text-primary fw-bold" th:text="${#numbers.formatDecimal(pb.nganSach, 0, 'COMMA', 0, 'POINT')} + ' ₫'"></td>
+
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-5">
+                    <div class="card p-4 border-0 shadow-sm h-100">
+                        <h5 class="fw-bold mb-3">Hoạt động gần đây</h5>
+                        <div class="small" id="activityList">
+                            <!-- JS sẽ render ở đây -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="tab-nv" role="tabpanel">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="fw-bold m-0">Quản lý Hồ sơ Nhân sự</h3>
+                <button class="btn btn-primary rounded-pill px-4 shadow" data-bs-toggle="modal" data-bs-target="#modalAddNV" id="btnOpenAddModal">
+                    <i class="fa fa-plus me-2"></i>Thêm nhân viên mới
+                </button>
+            </div>
+
+            <div class="card p-3 mb-4 border-0 shadow-sm bg-white">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="input-group search-container border rounded-pill">
+                            <span class="input-group-text bg-transparent border-0"><i class="fa fa-search text-muted"></i></span>
+                            <input type="text" id="searchNV" class="form-control border-0 bg-transparent" placeholder="Tìm theo tên hoặc mã nhân viên...">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <select id="filterPB" class="form-select rounded-pill border-light bg-light px-3">
+                            <option value="">-- Tất cả phòng ban --</option>
+                            <option th:each="pb : ${dsPB}" th:value="${pb.tenPB}" th:text="${pb.tenPB}"></option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 text-end">
+                        <button class="btn btn-outline-secondary w-100 rounded-pill" onclick="window.location.reload()"><i class="fa fa-sync-alt me-1"></i> Làm mới</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card border-0 shadow-sm overflow-hidden text-nowrap bg-white">
+                <table class="table table-hover align-middle mb-0" id="tableNV">
+                    <thead>
+                    <tr>
+                        <th>Mã NV</th><th>Họ Tên</th><th>Tuổi</th><th>Lương</th>
+                        <th>Bằng cấp</th><th>Kinh nghiệm</th><th>Nghỉ phép</th><th>Phòng ban</th>
+                        <th class="text-center">Thao tác</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    <tr th:each="nv : ${dsNV}" class="nv-row">
+                        <td class="fw-bold col-ma text-primary" th:text="${nv.maNV}"></td>
+                        <td class="fw-bold text-dark col-ten" th:text="${nv.tenNV}"></td>
+                        <td th:text="${nv.tuoi}"></td>
+                        <td class="text-success fw-bold" th:text="${#numbers.formatDecimal(nv.luong, 0, 'COMMA', 0, 'POINT')} + ' ₫'"></td>
+                        <td th:text="${nv.bangCap}"></td>
+                        <td th:text="${nv.soNamLamViec} + ' năm'"></td>
+                        <td th:text="${nv.soNgayNghiPhep} + ' ngày'"></td>
+                        <td class="col-pb"><span class="badge bg-info-subtle text-info px-3 py-2 rounded-pill" th:text="${nv.phongBan?.tenPB}">N/A</span></td>
+                        <td class="text-center">
+                            <button class="btn btn-action btn-outline-warning edit-btn me-1"
+                                    th:data-id="${nv.maNV}" th:data-ten="${nv.tenNV}" th:data-tuoi="${nv.tuoi}"
+                                    th:data-luong="${#numbers.formatDecimal(nv.luong, 0, 0)}"
+                                    th:data-pb="${nv.phongBan?.maPB}" th:data-bc="${nv.bangCap}"
+                                    th:data-kn="${nv.soNamLamViec}" th:data-np="${nv.soNgayNghiPhep}"
+                                    data-bs-toggle="modal" data-bs-target="#modalAddNV"><i class="fa fa-pen small"></i></button>
+                            <a th:href="@{/delete/{id}(id=${nv.maNV})}" class="btn btn-action btn-outline-danger" onclick="return confirm('Bạn chắc chắn muốn xóa nhân viên này? Dữ liệu chấm công liên quan cũng sẽ bị xóa.')"><i class="fa fa-trash small"></i></a>
+                        </td>
+                    </tr>
+                    <tr th:if="${#lists.isEmpty(dsNV)}">
+                        <td colspan="9" class="text-center py-5 text-muted">
+                            <i class="fa fa-users fs-1 mb-3 opacity-25"></i><br>Chưa có dữ liệu nhân viên. Bấm "Thêm nhân viên mới" để bắt đầu.
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="tab-pb" role="tabpanel">
+
+            <!-- HEADER -->
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h3 class="fw-bold m-0">Quản lý Phòng ban</h3>
+                <button class="btn btn-primary rounded-pill px-4 shadow"
+                        data-bs-toggle="modal" data-bs-target="#modalPB">
+                    <i class="fa fa-plus me-2"></i>Thêm phòng ban
+                </button>
+            </div>
+
+            <!-- SEARCH -->
+            <div class="card p-3 mb-4 shadow-sm">
+                <form method="get" th:action="@{/phong-ban/search}">
+                    <div class="input-group">
+                        <input type="text" name="keyword" class="form-control"
+                               placeholder="Tìm theo tên phòng ban...">
+                        <button class="btn btn-outline-primary">Tìm</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- LIST -->
+            <form th:action="@{/phong-ban/save-all}" method="post">
+                <div class="row g-4">
+                    <div class="col-md-6 col-xl-4" th:each="pb : ${dsPB}">
+                        <div class="card p-4 pb-card h-100">
+
+                            <!-- TITLE -->
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h5 class="fw-bold" th:text="${pb.tenPB}"></h5>
+                                    <small class="text-muted" th:text="${pb.maPB}"></small>
+                                </div>
+
+                                <!-- DELETE -->
+                                <a th:href="@{/phong-ban/delete/{id}(id=${pb.maPB})}"
+                                   class="btn btn-sm btn-outline-danger"
+                                   onclick="return confirm('Xóa phòng ban?')">
+                                    <i class="fa fa-trash"></i>
+                                </a>
+                            </div>
+
+                            <hr>
+
+                            <!-- NGÂN SÁCH -->
+                            <label class="small fw-bold">Ngân sách</label>
+                            <input type="number"
+                                   th:name="'nganSach_' + ${pb.maPB}"
+                                   class="form-control mb-3"
+                                   th:value="${pb.nganSach}">
+
+                            <!-- THƯỞNG -->
+                            <label class="small fw-bold">Quỹ thưởng</label>
+                            <input type="number"
+                                   th:name="'tienThuong_' + ${pb.maPB}"
+                                   class="form-control"
+                                   th:value="${pb.tienThuong}">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="text-center mt-4">
+                    <button class="btn btn-success px-5 rounded-pill">
+                        <i class="fa fa-save me-2"></i>Lưu tất cả
+                    </button>
+                </div>
+            </form>
+
+        </div>
+
+        <div class="tab-pane fade" id="tab-cc" role="tabpanel">
+            <div class="card p-4 shadow-sm border-0 bg-white">
+                <div class="d-flex justify-content-between align-items-center mb-4 pb-3 border-bottom">
+                    <h4 class="fw-bold m-0">Điểm danh ngày: <span class="text-primary" th:text="${#temporals.format(#temporals.createNow(), 'dd/MM/yyyy')}"></span></h4>
+                    <span class="badge bg-warning text-dark px-3 py-2 rounded-pill">Dữ liệu nội bộ - Cập nhật hàng ngày</span>
+                </div>
+
+                <form th:action="@{/cham-cong/save}" method="post">
+                    <div class="table-responsive">
+                        <table class="table align-middle table-striped table-hover">
+                            <thead><tr><th class="ps-3">Nhân viên</th><th width="220">Trạng thái</th><th>Ghi chú công việc / Lý do vắng</th></tr></thead>
+                            <tbody>
+                            <tr th:each="nv, iter : ${dsNV}">
+                                <td class="ps-3">
+                                    <input type="hidden" th:name="|items[${iter.index}].maNV|" th:value="${nv.maNV}">
+                                    <div class="fw-bold text-dark" th:text="${nv.tenNV}"></div>
+                                    <small class="text-muted" th:text="${nv.maNV} + ' - ' + ${nv.phongBan?.tenPB}"></small>
+                                </td>
+                                <td>
+                                    <select th:name="|items[${iter.index}].trangThai|" class="form-select border-0 bg-light px-3 rounded-pill">
+                                        <option value="Có mặt">✅ Có mặt</option>
+                                        <option value="Vắng mặt">❌ Vắng mặt</option>
+                                        <option value="Muộn">⏰ Đi muộn</option>
+                                    </select>
+                                </td>
+                                <td><input type="text" th:name="|items[${iter.index}].ghiChu|" class="form-control border-0 border-bottom bg-transparent" placeholder="Nhập ghi chú nếu có..."></td>
+                            </tr>
+                            <tr th:if="${#lists.isEmpty(dsNV)}">
+                                <td colspan="3" class="text-center py-4 text-muted">Không có nhân viên để chấm công.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="text-end mt-4">
+                        <button type="submit" class="btn btn-success px-5 py-2 rounded-pill fw-bold shadow"><i class="fa fa-check-circle me-2"></i>Xác nhận & Lưu bảng chấm công hôm nay</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="tab-tk" role="tabpanel">
+            <div class="card p-4 border-0 shadow-sm">
+                <h4 class="fw-bold text-primary mb-4"><i class="fas fa-chart-bar me-2"></i>Thống Kê Tổng Quan</h4>
+                <div class="row align-items-center">
+                    <div class="col-md-4 text-center">
+                        <div class="p-4 bg-light rounded-4 border">
+                            <small class="text-muted d-block mb-1">Lương Trung Bình</small>
+                            <h2 id="avg-luong-display" class="fw-bold text-success mb-0">0 VNĐ</h2>
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <canvas id="chartBangCap" style="max-height: 280px;"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-pane fade" id="tab-lt" role="tabpanel">
+            <div class="card p-4 border-0 shadow-sm">
+                <div class="d-flex justify-content-between mb-3">
+                    <h4 class="fw-bold text-info"><i class="fas fa-calendar-alt me-2"></i>Lịch Trình Công Tác</h4>
+                    <button class="btn btn-primary btn-sm" onclick="document.getElementById('formAddEvent').classList.toggle('d-none')">+ Thêm Lịch</button>
+                </div>
+
+                <div id="formAddEvent" class="d-none mb-4 p-3 bg-light rounded border">
+                    <div class="row g-2">
+                        <div class="col-md-5"><input type="text" id="inTieuDe" class="form-control" placeholder="Tên sự kiện..."></div>
+                        <div class="col-md-5"><input type="datetime-local" id="inNgay" class="form-control"></div>
+                        <div class="col-md-2"><button class="btn btn-success w-100" onclick="postEvent()">Lưu</button></div>
+                    </div>
+                </div>
+
+                <table class="table table-hover">
+                    <thead class="table-dark">
+                    <tr>
+                        <th>Thời Gian (Giờ & Ngày)</th>
+                        <th>Nội Dung Sự Kiện</th>
+                    </tr>
+                    </thead>
+                    <tbody id="list-lich-trinh-body"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+        <div class="tab-pane fade" id="tab-settings" role="tabpanel">
+            <div class="row justify-content-center pt-5">
+                <div class="col-md-6 col-lg-5">
+                    <div class="card p-5 text-center shadow-lg border-0 bg-white">
+                        <div class="bg-primary-subtle text-primary rounded-circle d-inline-flex align-items-center justify-content-center mb-4" style="width: 80px; height: 80px;">
+                            <i class="fa fa-shield-alt fs-2"></i>
+                        </div>
+                        <h4 class="fw-bold mb-1">Bảo mật tài khoản</h4>
+                        <p class="text-muted mb-4">Thay đổi mật khẩu đăng nhập hệ thống</p>
+                        <form th:action="@{/settings/change-password}" method="post" class="text-start">
+                            <div class="mb-3">
+                                <label class="small fw-bold mb-1 text-muted">Mật khẩu hiện tại</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-0"><i class="fa fa-lock text-muted"></i></span>
+                                    <input type="password" name="oldPassword" class="form-control bg-light border-0" required placeholder="********">
+                                </div>
+                            </div>
+                            <div class="mb-4">
+                                <label class="small fw-bold mb-1 text-muted">Mật khẩu mới</label>
+                                <div class="input-group">
+                                    <span class="input-group-text bg-light border-0"><i class="fa fa-key text-muted"></i></span>
+                                    <input type="password" name="newPassword" class="form-control bg-light border-0" required placeholder="Tối thiểu 6 ký tự">
+                                </div>
+                            </div>
+                            <button class="btn btn-primary w-100 py-3 rounded-pill fw-bold shadow">CẬP NHẬT MẬT KHẨU NGAY</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<div class="modal fade" id="modalAddNV" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <form th:action="@{/save}" method="post" class="modal-content border-0 shadow-lg" id="formNV">
+            <div class="modal-header bg-primary text-white border-0 p-4">
+                <h5 class="modal-title fw-bold" id="modalTitle">Thêm hồ sơ nhân viên mới</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body row g-3 p-4 bg-light">
+                <div class="col-12"><h6 class="text-primary fw-bold border-bottom pb-2 mb-0">1. Thông tin cơ bản</h6></div>
+                <div class="col-md-4">
+                    <label class="small fw-bold mb-1">Mã nhân viên (*)</label>
+                    <input type="text" name="maNV" id="e-id" class="form-control rounded-pill" required placeholder="Ví dụ: NV001">
+                    <small class="text-muted small-x">Không thể sửa nếu cập nhật.</small>
+                </div>
+                <div class="col-md-8">
+                    <label class="small fw-bold mb-1">Họ và Tên (*)</label>
+                    <input type="text" name="tenNV" id="e-ten" class="form-control rounded-pill" required placeholder="Nhập đầy đủ họ tên">
+                </div>
+                <div class="col-md-3">
+                    <label class="small fw-bold mb-1">Tuổi</label>
+                    <input type="number" name="tuoi" id="e-tuoi" class="form-control rounded-pill" min="18" max="65" placeholder="18-65">
+                </div>
+                <div class="col-md-5">
+                    <label class="small fw-bold mb-1">Phòng ban công tác (*)</label>
+                    <select name="maPB" id="e-pb" class="form-select rounded-pill" required>
+                        <option value="" disabled selected>-- Chọn phòng ban --</option>
+                        <option th:each="pb : ${dsPB}" th:value="${pb.maPB}" th:text="${pb.tenPB}"></option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="small fw-bold mb-1">Bằng cấp cao nhất</label>
+                    <input type="text" name="bangCap" id="e-bc" class="form-control rounded-pill" placeholder="Ví dụ: Đại học, Cao đẳng">
+                </div>
+
+                <div class="col-12 mt-4"><h6 class="text-primary fw-bold border-bottom pb-2 mb-0">2. Hợp đồng & Đãi ngộ</h6></div>
+                <div class="col-md-5">
+                    <label class="small fw-bold mb-1">Mức lương chính (₫)</label>
+                    <div class="input-group">
+                        <input type="number" name="luong" id="e-luong" class="form-control rounded-pill-start border-end-0" required placeholder="Ví dụ: 10000000">
+                        <span class="input-group-text bg-white text-muted rounded-pill-end border-start-0">₫</span>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label class="small fw-bold mb-1">Kinh nghiệm (năm)</label>
+                    <input type="number" name="soNamLamViec" id="e-kn" class="form-control rounded-pill" min="0" placeholder="0">
+                </div>
+                <div class="col-md-4">
+                    <label class="small fw-bold mb-1">Số ngày nghỉ phép / năm</label>
+                    <input type="number" name="soNgayNghiPhep" id="e-np" class="form-control rounded-pill" min="0" value="12">
+                </div>
+            </div>
+            <div class="modal-footer border-0 p-4 bg-light pt-0">
+                <button type="button" class="btn btn-outline-secondary rounded-pill px-4" data-bs-dismiss="modal">Hủy bỏ</button>
+                <button type="submit" class="btn btn-primary rounded-pill px-5 fw-bold shadow" id="btnSubmitForm">LƯU HỒ SƠ</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="modal fade" id="modalPB" tabindex="-1">
+    <div class="modal-dialog">
+        <form th:action="@{/phong-ban/add}" method="post" class="modal-content">
+
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Thêm phòng ban</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label>Mã phòng ban</label>
+                    <input type="text" name="maPB" class="form-control" required>
+                </div>
+
+                <div class="mb-3">
+                    <label>Tên phòng ban</label>
+                    <input type="text" name="tenPB" class="form-control" required>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button class="btn btn-primary">Thêm</button>
+            </div>
+
+        </form>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+        // --- Sidebar Toggle cho Mobile ---
+        const sidebar = document.getElementById('sidebar');
+        const toggleBtn = document.getElementById('sidebarToggle');
+        if(toggleBtn) {
+            toggleBtn.addEventListener('click', () => {
+                sidebar.classList.toggle('show');
+            });
+        }
+        // Đóng sidebar khi bấm vào nội dung chính (mobile)
+        document.querySelector('.main-content').addEventListener('click', () => {
+            if(window.innerWidth <= 992) sidebar.classList.remove('show');
+        });
+
+
+        // --- Logic Tìm kiếm & Lọc kết hợp (Giữ nguyên) ---
+        const runSearch = () => {
+            let s = document.getElementById('searchNV').value.toLowerCase();
+            let f = document.getElementById('filterPB').value.toLowerCase();
+            let rows = document.querySelectorAll('#tableNV tbody tr.nv-row');
+            let hasResult = false;
+
+            rows.forEach(r => {
+                let name = r.querySelector('.col-ten').innerText.toLowerCase();
+                let id = r.querySelector('.col-ma').innerText.toLowerCase();
+                let pb = r.querySelector('.col-pb').innerText.toLowerCase();
+
+                let matchesSearch = name.includes(s) || id.includes(s);
+                let matchesFilter = f === "" || pb.includes(f);
+
+                if (matchesSearch && matchesFilter) {
+                    r.style.display = "";
+                    hasResult = true;
+                } else {
+                    r.style.display = "none";
+                }
+            });
+            // Ẩn/hiện dòng "Không có dữ liệu" khi search không ra
+            // (Hàm này cần bổ sung dòng empty row vào HTML nếu muốn xịn hơn)
+        };
+
+        if(document.getElementById('searchNV')) document.getElementById('searchNV').addEventListener('input', runSearch);
+        if(document.getElementById('filterPB')) document.getElementById('filterPB').addEventListener('change', runSearch);
+
+
+        // --- CHỨC NĂNG CHÍNH: XỬ LÝ MODAL THÊM & SỬA ---
+        const formNV = document.getElementById('formNV');
+        const modalTitle = document.getElementById('modalTitle');
+        const maNVInput = document.getElementById('e-id');
+        const btnSubmitForm = document.getElementById('btnSubmitForm');
+        // Thư mục gốc của ứng dụng (context path), Thymeleaf sẽ xử lý @{/}
+        const contextPath = '[[@{/}]]';
+
+        // 1. Xử lý khi bấm nút "Thêm nhân viên mới"
+        document.getElementById('btnOpenAddModal').addEventListener('click', () => {
+            // Cấu hình Modal thành mode "Thêm"
+            modalTitle.innerText = "Thêm hồ sơ nhân viên mới";
+            modalTitle.parentElement.classList.remove('bg-warning');
+            modalTitle.parentElement.classList.add('bg-primary');
+            btnSubmitForm.innerText = "LƯU HỒ SƠ";
+            btnSubmitForm.classList.remove('btn-warning');
+            btnSubmitForm.classList.add('btn-primary');
+
+            // Đặt action form về /save
+            formNV.action = contextPath + "save";
+
+            // Reset form và cho phép sửa mã NV
+            formNV.reset();
+            maNVInput.readOnly = false;
+            maNVInput.classList.remove('bg-light');
+
+            // Thiết lập giá trị mặc định cho ngày phép
+            document.getElementById('e-np').value = 12;
+            document.getElementById('e-kn').value = 0;
+        });
+
+        // 2. Xử lý khi bấm nút "Sửa" (Icon bút chì) trong bảng
+        document.querySelectorAll('.edit-btn').forEach(b => {
+            b.addEventListener('click', () => {
+                // Cấu hình Modal thành mode "Sửa"
+                modalTitle.innerText = "Sửa hồ sơ nhân sự: " + b.dataset.ten;
+                modalTitle.parentElement.classList.remove('bg-primary');
+                modalTitle.parentElement.classList.add('bg-warning'); // Đổi màu header sang vàng
+                btnSubmitForm.innerText = "CẬP NHẬT CHỈNH SỬA";
+                btnSubmitForm.classList.remove('btn-primary');
+                btnSubmitForm.classList.add('btn-warning');
+
+                // Đặt action form về /update
+                formNV.action = contextPath + "update";
+
+                // Khóa trường Mã NV (không cho sửa ID)
+                maNVInput.readOnly = true;
+                maNVInput.classList.add('bg-light');
+
+                // Map dữ liệu từ data-attributes của nút vào các ô input trong Modal
+                maNVInput.value = b.dataset.id;
+                document.getElementById('e-ten').value = b.dataset.ten;
+                document.getElementById('e-tuoi').value = b.dataset.tuoi;
+                // Chuyển lương từ định dạng "10,000,000" sang số "10000000" để ô input type="number" hiểu
+                document.getElementById('e-luong').value = b.dataset.luong.replace(/,/g, '');
+                document.getElementById('e-pb').value = b.dataset.pb;
+                document.getElementById('e-bc').value = b.dataset.bc;
+                document.getElementById('e-kn').value = b.dataset.kn;
+                document.getElementById('e-np').value = b.dataset.np;
+            });
+        });
+
+
+    // ===== LOAD DASHBOARD DATA =====
+fetch("http://localhost:8080/api/dashboard")
+    .then(res => res.json())
+    .then(data => {
+        console.log("Dashboard data:", data);
+
+        document.getElementById("presentCount").innerText = data.present;
+        document.getElementById("absentCount").innerText = data.absent;
+        document.getElementById("lateCount").innerText = data.late;
+        document.getElementById("totalCount").innerText = data.total;
+    })
+    .catch(err => console.error("Lỗi dashboard:", err));
+
+    function loadActivities() {
+    fetch("http://localhost:8080/api/dashboard/activities")
+        .then(res => res.json())
+        .then(data => {
+            console.log("Activities:", data);
+
+            let html = "";
+
+            data.forEach(item => {
+                html += `<div class="mb-2 border-bottom pb-2">
+                            <div>${item.noiDung}</div>
+                            <small class="text-muted">
+                                ${new Date(item.thoiGian).toLocaleString()}
+                            </small>
+                         </div>`;
+            });
+
+            document.getElementById("activityList").innerHTML = html;
+        })
+        .catch(err => console.error("Lỗi hoạt động:", err));
+}
+
+// Load lần đầu
+loadActivities();
+
+// 🔁 Auto update mỗi 5 giây
+setInterval(loadActivities, 5000);
+
+    </script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let chartManager = null;
+
+// --- XỬ LÝ KHI NHẤN TAB THỐNG KÊ ---
+document.querySelector('[data-bs-target="#tab-tk"]').addEventListener('shown.bs.tab', function () {
+    fetch('/api/thong-ke/data')
+        .then(res => res.json())
+        .then(data => {
+            // Đổ số lương trung bình vào màn hình
+            const luongVal = parseFloat(data.avgLuong) || 0;
+            document.getElementById('avg-luong-display').innerText =
+                luongVal.toLocaleString('vi-VN') + " VNĐ";
+
+            // Vẽ biểu đồ bằng cấp
+            const ctx = document.getElementById('chartBangCap').getContext('2d');
+            if (chartManager) chartManager.destroy();
+            chartManager = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(data.bangCapData || {}),
+                    datasets: [{ label: 'Nhân sự', data: Object.values(data.bangCapData || {}), backgroundColor: '#3498db' }]
+                }
+            });
+        });
+});
+
+// --- XỬ LÝ KHI NHẤN TAB LỊCH TRÌNH ---
+function loadEvents() {
+    fetch('/api/events')
+        .then(res => res.json())
+        .then(events => {
+            let html = "";
+            events.forEach(ev => {
+                const d = new Date(ev.ngayBatDau);
+                const time = d.getHours().toString().padStart(2,'0') + ":" + d.getMinutes().toString().padStart(2,'0');
+                const date = d.toLocaleDateString('vi-VN');
+                html += `<tr>
+                    <td><span class="badge bg-primary">${time}</span> ${date}</td>
+                    <td class="fw-bold">${ev.tieuDe}</td>
+                </tr>`;
+            });
+            document.getElementById('list-lich-trinh-body').innerHTML = html || "<tr><td colspan='2'>Trống</td></tr>";
+        });
+}
+
+function postEvent() {
+    const data = {
+        tieuDe: document.getElementById('inTieuDe').value,
+        ngayBatDau: document.getElementById('inNgay').value,
+        moTa: ""
+    };
+    fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    }).then(res => {
+        if(res.ok) {
+            alert("Đã lưu!");
+            loadEvents();
+            document.getElementById('formAddEvent').classList.add('d-none');
+        }
+    });
+}
+
+document.querySelector('[data-bs-target="#tab-lt"]').addEventListener('shown.bs.tab', loadEvents);
+</script>
+</body>
+</html>

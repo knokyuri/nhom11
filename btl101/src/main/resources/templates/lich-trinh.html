@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <title>Lịch Trình Công Tác</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+        body { background-color: #f8f9fa; }
+        .event-card { border: none; border-radius: 12px; transition: all 0.3s; }
+        .event-card:hover { box-shadow: 0 10px 20px rgba(0,0,0,0.1); }
+        .time-badge { min-width: 80px; text-align: center; }
+        .table thead { background: #34495e; color: white; }
+    </style>
+</head>
+<body class="p-4">
+
+<div class="container">
+  <div class="row mb-4 align-items-center">
+    <div class="col">
+      <h3 class="fw-bold"><i class="fas fa-calendar-alt text-primary me-2"></i>Quản Lý Lịch Trình</h3>
+    </div>
+    <div class="col text-end">
+      <button class="btn btn-primary" onclick="toggleForm()">
+        <i class="fas fa-plus me-1"></i> Thêm Lịch Mới
+      </button>
+    </div>
+  </div>
+
+  <div id="eventForm" class="card event-card mb-4 d-none shadow-sm">
+    <div class="card-body bg-light">
+      <h5 class="card-title mb-3">Tạo sự kiện mới</h5>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <label class="form-label">Tên sự kiện</label>
+          <input type="text" id="tieuDe" class="form-control" placeholder="Ví dụ: Họp giao ban...">
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">Thời gian (Ngày & Giờ)</label>
+          <input type="datetime-local" id="ngayBatDau" class="form-control">
+        </div>
+        <div class="col-12">
+          <label class="form-label">Ghi chú</label>
+          <textarea id="moTa" class="form-control" rows="2"></textarea>
+        </div>
+        <div class="col-12 text-end">
+          <button class="btn btn-secondary me-2" onclick="toggleForm()">Hủy</button>
+          <button class="btn btn-success px-4" onclick="saveNewEvent()">Lưu Lịch</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card event-card shadow-sm">
+    <div class="card-body p-0">
+      <table class="table table-hover mb-0">
+        <thead>
+        <tr>
+          <th class="ps-4">Thời Gian</th>
+          <th>Nội Dung Sự Kiện</th>
+          <th>Ghi Chú</th>
+          <th class="text-center">Thao Tác</th>
+        </tr>
+        </thead>
+        <tbody id="eventTableBody">
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+    // Hàm ẩn/hiện form
+    function toggleForm() {
+        const form = document.getElementById('eventForm');
+        form.classList.toggle('d-none');
+    }
+
+    // Lấy dữ liệu khi tải trang
+    function loadEvents() {
+        fetch('/api/events')
+            .then(res => res.json())
+            .then(data => {
+                let html = "";
+                data.forEach(ev => {
+                    const dateObj = new Date(ev.ngayBatDau);
+                    const timeStr = dateObj.getHours().toString().padStart(2, '0') + ":" +
+                                    dateObj.getMinutes().toString().padStart(2, '0');
+                    const dateStr = dateObj.toLocaleDateString('vi-VN');
+
+                    html += `
+                        <tr>
+                            <td class="ps-4">
+                                <span class="badge bg-info text-dark time-badge">${timeStr}</span>
+                                <span class="ms-2 text-muted small">${dateStr}</span>
+                            </td>
+                            <td><strong class="text-dark">${ev.tieuDe}</strong></td>
+                            <td><small>${ev.moTa || ''}</small></td>
+                            <td class="text-center">
+                                <button class="btn btn-sm text-danger" onclick="deleteEvent(${ev.id})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </td>
+                        </tr>`;
+                });
+                document.getElementById('eventTableBody').innerHTML = html || "<tr><td colspan='4' class='text-center p-4 text-muted'>Chưa có lịch trình nào được ghi lại.</td></tr>";
+            })
+            .catch(err => console.error("Lỗi:", err));
+    }
+
+    // Lưu sự kiện mới
+    function saveNewEvent() {
+        const payload = {
+            tieuDe: document.getElementById('tieuDe').value,
+            ngayBatDau: document.getElementById('ngayBatDau').value,
+            moTa: document.getElementById('moTa').value
+        };
+
+        if(!payload.tieuDe || !payload.ngayBatDau) {
+            alert("Vui lòng nhập tên và thời gian!");
+            return;
+        }
+
+        fetch('/api/events', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        }).then(res => {
+            if(res.ok) {
+                alert("Đã thêm lịch thành công!");
+                location.reload(); // Reload để cập nhật danh sách
+            }
+        });
+    }
+
+    function deleteEvent(id) {
+    if(!confirm("Xóa sự kiện này?")) return;
+
+    fetch('/api/events/' + id, {
+        method: 'DELETE'
+    }).then(() => {
+        loadEvents();
+    });
+}
+    // Khởi tạo
+    loadEvents();
+</script>
+</body>
+</html>
